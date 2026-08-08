@@ -1,0 +1,8 @@
+{
+  "act": "authorise",
+  "version": 1,
+  "wording": {
+    "en": "I authorise Vaulet to {scope} for {about} on behalf of {org}, limited to {limit}, until {until}",
+    "th": "ข้าพเจ้ามอบอำนาจให้ Vaulet {scope} สำหรับ {about} ในนามของ {org} ภายในขอบเขต {limit} จนถึงวันที่ {until}"
+  }
+}
