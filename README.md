@@ -55,6 +55,29 @@ honest way to hand it over is the way the address dataset is handed over —
 signed bytes, checked against a key the wallet already pins. Until that lands,
 the library keeps its copy and this one must be kept byte-identical to it.
 
+## The address dataset
+
+`address/<ISO-3166-1 alpha-2>.json` — the tree of provinces, districts and
+sub-localities an address is checked against. Thailand today.
+
+**Nobody trusts the connection it arrives over.** The issuer serves a country's
+tree whole, with an attestation over the digest of *the bytes as sent*, and the
+wallet checks two separate things (ADR 0031):
+
+- **are these the bytes that were signed** — a digest of the data exactly as it
+  arrived, never of a re-serialised copy
+- **did we sign them** — against a key the wallet already pins, so a list of
+  place names introduces no new trust
+
+That is the whole reason this is data and not a database: a dataset that mapped
+a sub-locality to the wrong postcode would put a wrong address on a credential
+that stays true for years, and it would look exactly like the right one.
+
+**The service packs it.** This repository is where a country's tree is authored
+and where a human reads it; `vaulet-services` compiles a copy in and serves it
+over `/api/v1/address/{country}` with the attestation. Keep the two identical —
+the copy is a build artefact of this one.
+
 ## Why these do not belong in the library
 
 The cryptography that binds a statement to a signature belongs in
