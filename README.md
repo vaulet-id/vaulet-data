@@ -42,7 +42,20 @@ The template travels *inside* each statement, so verification needs no network
 and no lookup here. This repository is where the catalogue is authored and
 where a human goes to read it.
 
-## Why these are not in the library
+## Where the authoritative copy is, today
+
+**`vaulet-core` still carries the `authorise` wording in its source**, and this
+repository is the authored, readable copy of it. That is one copy too many, and
+it is stated here rather than hidden, because the rule this catalogue exists to
+serve is that there is exactly one.
+
+Collapsing it needs a delivery step that does not exist yet: the wallet builds a
+mandate statement on the device, so it needs the wording locally, and the only
+honest way to hand it over is the way the address dataset is handed over —
+signed bytes, checked against a key the wallet already pins. Until that lands,
+the library keeps its copy and this one must be kept byte-identical to it.
+
+## Why these do not belong in the library
 
 The cryptography that binds a statement to a signature belongs in
 [`vaulet-core`](https://github.com/vaulet-id/vaulet-core). A sentence in Thai
