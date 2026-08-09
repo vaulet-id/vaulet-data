@@ -78,6 +78,26 @@ mod tests {
                 deepest, levels.len(),
                 "{c}: says {} levels and carries {deepest}", levels.len()
             );
+
+            // What each level is called here, as a token a reader translates —
+            // never a word, because a consumer of this data is read in more
+            // than one language and "State" is already English. The set is
+            // closed on purpose: a country introducing a token nobody has a
+            // word for would ship a picker with a blank heading over it.
+            const NAMES: &[&str] = &[
+                "province", "state", "prefecture", "district", "city",
+                "sub_district", "postcode", "postal_code", "zip",
+            ];
+            let named = v["level_names"].as_object().expect("level_names");
+            for (level, name) in named {
+                let name = name.as_str().expect("a level name is a token");
+                assert!(NAMES.contains(&name), "{c}: {level} is called {name}, which nothing can say");
+            }
+            for level in levels {
+                let level = level.as_str().unwrap();
+                assert!(named.contains_key(level), "{c}: walks {level} and does not name it");
+            }
+            assert!(named.contains_key("postal_code"), "{c}: has no word for its postal code");
         }
     }
 

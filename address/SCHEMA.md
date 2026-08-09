@@ -69,6 +69,7 @@ one of them is copied from an authority rather than decided here.
   "postal": { "pattern": "\\d{3}-?\\d{4}", "role": "determines" },
 
   "levels": ["region"],
+  "level_names": { "region": "prefecture", "postal_code": "postal_code" },
   "regions": [ { "c": "13", "local": "東京都", "en": "Tokyo" } ]
 }
 ```
@@ -84,6 +85,15 @@ one of them is copied from an authority rather than decided here.
 - **`postal.role`** is `leaf` (TH: the code hangs off the last level),
   `pattern` (US, CN: validated, not looked up) or `determines` (JP: the code is
   the lookup key and the tree below `region` does not exist here).
+- **`level_names`** is what this country calls each level, **as a token and
+  never as a word** — `state`, `prefecture`, `sub_district`. A consumer of this
+  data is read in more than one language, so a file carrying "State" would be
+  carrying English onto a Thai screen. The token set is closed and a test says
+  so: a country introducing one nobody has a word for would ship a picker with a
+  blank heading over its list. The values come from `libaddressinput`'s
+  `state_name_type` and its siblings, **except Thailand's**, which that source
+  leaves null — meaning its generic defaults, "City" and "Suburb", where Thai
+  addresses use district and sub-district and the wallet already said so.
 - **`require`** is the authority's, spelled out instead of encoded.
 - `regions`/`l`/`d` keep their current shape where they exist, so `TH.json`
   needs only the three new keys and no restructuring.
@@ -96,10 +106,17 @@ of work from a repository that holds four datasets. The renderer needs the field
 between `%C, %S %Z` and `〒%Z%n%S%n%A` lives — and ADR 0031's three tiers are
 about which claims a credential carries, not how a form is laid out.
 
-**The checker in `vaulet-core` and the form in the wallet do not read `levels`
-or `require` yet.** Until they do, the four files are correct and only Thailand
-is consulted correctly — a dataset whose depth nothing reads will be treated as
-three levels deep. That work is the next thing, not this.
+**The wallet reads `levels`, `postal.role` and `level_names` since 2026-08-09.**
+Its picker walks the steps a country declares and calls them what that country
+calls them, and where the postal code is typed rather than picked it offers a
+field for it. `require` and `postal.pattern` still have no consumer: nothing
+validates an address against them, in the wallet or in `vaulet-core`. They are
+carried rather than parsed, so that whoever writes that validation reads the
+authority instead of re-deriving it.
+
+The renderer's field *order* is still missing — `libaddressinput`'s `fmt`, which
+is where `%C, %S %Z` differs from `〒%Z%n%S%n%A`. The wallet does not lay an
+address out; it collects the parts and keeps a free-text block beside them.
 
 ## What was actually added, 2026-08-09
 
