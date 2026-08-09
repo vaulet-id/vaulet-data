@@ -125,6 +125,16 @@ one of them carrying both names and a postal code.
 **Every level needs both names and a code.** A tree with holes will pass this
 repository's tests and produce an address nobody can post to.
 
+**And this shape is Thailand's.** Three levels with a postal code on every leaf
+is how Thai addresses work; it is not how American, Japanese or Chinese ones do.
+Japan does not require a city at all — a seven-digit code names the prefecture,
+the municipality and the town area together. The United States publishes no city
+list; a ZIP decides. Adding either in this shape would produce a file that
+parses, passes every test here, and is wrong.
+
+[`address/SCHEMA.md`](address/SCHEMA.md) has the evidence and the format that
+would carry the difference. **Read it before adding a country.**
+
 ## Why these do not belong in the library
 
 The cryptography that binds a statement to a signature belongs in
