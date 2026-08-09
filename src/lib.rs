@@ -19,12 +19,15 @@
 pub fn address(country: &str) -> Option<&'static str> {
     match country {
         "TH" => Some(include_str!("../address/TH.json")),
+        "US" => Some(include_str!("../address/US.json")),
+        "JP" => Some(include_str!("../address/JP.json")),
+        "CN" => Some(include_str!("../address/CN.json")),
         _ => None,
     }
 }
 
 /// Every country with a tree here.
-pub const ADDRESS_COUNTRIES: &[&str] = &["TH"];
+pub const ADDRESS_COUNTRIES: &[&str] = &["TH", "US", "JP", "CN"];
 
 /// A statement template, by act and version — the wording a person reads before
 /// signing, per language.
@@ -48,6 +51,33 @@ mod tests {
             let v: serde_json::Value = serde_json::from_str(body).expect("parses");
             assert_eq!(v["country"], *c, "the file disagrees with its own name");
             assert!(!v["version"].as_str().unwrap().is_empty(), "a tree states its version");
+
+            // `levels` is what a reader consults instead of inferring depth
+            // from whether `l` happens to be present. A file that omitted it
+            // would be read as three levels deep, which is true of one country
+            // here and of none of the others.
+            let levels = v["levels"].as_array().expect("a tree states its depth");
+            assert!(!levels.is_empty(), "{c}: levels is empty");
+            assert!(!v["require"].as_array().expect("require").is_empty(), "{c}: require is empty");
+            let role = v["postal"]["role"].as_str().expect("postal.role");
+            assert!(
+                matches!(role, "leaf" | "pattern" | "determines"),
+                "{c}: postal.role is {role}, which nothing knows how to read"
+            );
+
+            // The depth the file claims is the depth it has.
+            let deepest = v["regions"].as_array().unwrap().iter()
+                .map(|r| {
+                    let l = r["l"].as_array().map(|x| x.len()).unwrap_or(0);
+                    let d: usize = r["l"].as_array().map(|xs| xs.iter()
+                        .map(|x| x["d"].as_array().map(|y| y.len()).unwrap_or(0)).sum()).unwrap_or(0);
+                    if d > 0 { 3 } else if l > 0 { 2 } else { 1 }
+                })
+                .max().unwrap_or(1);
+            assert_eq!(
+                deepest, levels.len(),
+                "{c}: says {} levels and carries {deepest}", levels.len()
+            );
         }
     }
 

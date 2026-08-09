@@ -1,13 +1,13 @@
 # The address format, and why one shape will not do
 
-`TH.json` is the only country here, and its shape is Thailand's: three
+`TH.json` was the only country here, and its shape is Thailand's: three
 administrative levels, a postal code on every leaf, and every leaf named twice.
-Adding the United States, Japan or China in that shape would produce data that
-parses, passes every test, and is wrong.
+Adding the United States, Japan or China in that shape would have produced data
+that parses, passes every test, and is wrong.
 
-This document is what a second country needs before it is added. It is written
-from Google's `libaddressinput` — the dataset Chrome and Android use to lay out
-address forms — read on 2026-08-09, not from memory.
+So the format carries the difference instead, and the four files declare it.
+This document is why, and what a fifth country needs. It is written from what
+the authorities publish — read on 2026-08-09, not from memory.
 
 ## What the four countries actually require
 
@@ -18,7 +18,7 @@ address forms — read on 2026-08-09, not from memory.
 | | requires | levels published | where the postal code sits |
 |---|---|---|---|
 | **TH** | — | 77 provinces → districts → subdistricts | on the leaf |
-| **CN** | A C S Z | 34 provinces → districts | separate from the tree |
+| **CN** | A C S Z | 31 provinces → cities → districts | separate from the tree |
 | **US** | A C S Z | **62 states, and nothing below** | the ZIP determines the city |
 | **JP** | A S Z | **47 prefectures, and nothing below** | the code determines everything below |
 
@@ -36,8 +36,9 @@ decides whether it is right. Building a tree would mean importing about 41,000
 ZIP codes from the Census Bureau and inventing a hierarchy that the postal
 service does not use — ZIPs cross county lines, and some cross state lines.
 
-**China fits, one level shallower.** Province and district exist; the postal code
-is not a property of a district the way it is of a Thai subdistrict.
+**China fits.** Province, city and district all exist and are published; the
+postal code simply is not a property of a district the way it is of a Thai
+subdistrict, so it is validated rather than looked up.
 
 ## What a format has to carry, therefore
 
@@ -54,7 +55,7 @@ Three things `TH.json` currently implies rather than states:
 `postal_pattern` and something naming the postal code's role are new, and every
 one of them is copied from an authority rather than decided here.
 
-## The shape being proposed
+## The shape
 
 ```json
 {
@@ -73,9 +74,13 @@ one of them is copied from an authority rather than decided here.
 ```
 
 - **`levels`** names the depth actually present, so a reader does not infer it
-  from whether `l` happens to be there. `TH` is
-  `["region","locality","dependent_locality"]`, `CN` is `["region","locality"]`,
-  `US` and `JP` are `["region"]`.
+  from whether `l` happens to be there. `TH` and `CN` are
+  `["region","locality","dependent_locality"]`, `JP` is `["region","locality"]`,
+  `US` is `["region"]`. **A test asserts that the depth a file claims is the
+  depth it has** — the alternative is a file that lies quietly.
+- **`structure_levels`** is what the administrative hierarchy has, which is not
+  always what an address uses. Only the United States differs today, and that
+  difference is the whole reason the key exists.
 - **`postal.role`** is `leaf` (TH: the code hangs off the last level),
   `pattern` (US, CN: validated, not looked up) or `determines` (JP: the code is
   the lookup key and the tree below `region` does not exist here).
@@ -91,9 +96,39 @@ of work from a repository that holds four datasets. The renderer needs the field
 between `%C, %S %Z` and `〒%Z%n%S%n%A` lives — and ADR 0031's three tiers are
 about which claims a credential carries, not how a form is laid out.
 
-**Do not add a country's data before the checker in `vaulet-core` and the form
-in the wallet both read `levels` and `require`.** A dataset whose depth nothing
-consults is a dataset that will be trusted to be three levels deep.
+**The checker in `vaulet-core` and the form in the wallet do not read `levels`
+or `require` yet.** Until they do, the four files are correct and only Thailand
+is consulted correctly — a dataset whose depth nothing reads will be treated as
+three levels deep. That work is the next thing, not this.
+
+## What was actually added, 2026-08-09
+
+| | levels | level 1 | level 2 | level 3 | postal role |
+|---|---|---|---|---|---|
+| TH | 3 | 77 provinces | 928 districts | 7,436 subdistricts | `leaf` |
+| CN | 3 | 31 provinces | 342 cities | 2,978 districts | `pattern` |
+| JP | 2 | 47 prefectures | 1,895 municipalities | — | `determines` |
+| US | 1 | 62 states | — | — | `pattern` |
+
+**The United States carries counties, and they are not part of the address.**
+3,234 of them, under `counties` rather than `l`, and `levels` says `["region"]`
+while `structure_levels` says `["region","county"]`. The distinction is the
+point: a county is real, it decides voting districts and property tax and court
+jurisdiction, and **it is not written on an envelope**. A form that asked for it
+would be asking most Americans for something they do not read on their own post,
+and a wrong county on a credential is worse than an absent one. Deriving it from
+a ZIP does not rescue it either: a ZIP can span two counties and occasionally
+two states, so the derivation is a guess wearing a fact's clothes.
+
+If a verifier ever needs a county, it should be a claim with its own provenance
+and its own confidence, not a field smuggled into an address.
+
+**Japan's municipalities have no romaji here, and China's have partial pinyin.**
+1,895 Japanese entries carry `local` and an empty `en`; 324 of 342 Chinese cities
+have a latin name and none of the 2,978 districts do. The gap is left visible
+rather than filled by transliterating locally — a name this repository invented
+would be indistinguishable from one an authority published, and the whole
+argument for publishing this data is that somebody can check it.
 
 ## Sources
 

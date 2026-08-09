@@ -57,8 +57,16 @@ the library keeps its copy and this one must be kept byte-identical to it.
 
 ## The address dataset
 
-`address/<ISO-3166-1 alpha-2>.json` — the tree of provinces, districts and
-sub-localities an address is checked against. Thailand today.
+`address/<ISO-3166-1 alpha-2>.json` — the administrative tree an address is
+checked against. Thailand, the United States, Japan and China.
+
+**They are not the same shape, and each file says so.** `levels` names the depth
+actually present — three for Thailand and China, two for Japan, one for the
+United States — because Japan's postal code determines the municipality and
+America publishes no city list at all. `postal.role` says which of those a code
+is: `leaf`, `pattern` or `determines`. [`SCHEMA.md`](address/SCHEMA.md) has the
+evidence, and the reason the United States carries counties that are deliberately
+not part of its address.
 
 **Nobody trusts the connection it arrives over.** The issuer serves a country's
 tree whole, with an attestation over the digest of *the bytes as sent*, and the
