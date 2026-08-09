@@ -29,6 +29,22 @@ pub fn address(country: &str) -> Option<&'static str> {
 /// Every country with a tree here.
 pub const ADDRESS_COUNTRIES: &[&str] = &["TH", "US", "JP", "CN"];
 
+/// Every country there is, by both ISO 3166-1 codes, named in each language
+/// this system is read in.
+///
+/// **Two codes, because two things ask.** A passport's MRZ names its issuing
+/// country in alpha-3 and an address names one in alpha-2, and a wallet that
+/// held only one of them had to guess at the other. The alpha-3 English names
+/// are ISO's own formal ones — the wording a travel document uses, so what a
+/// screen shows beside a scanned passport matches what the passport says.
+/// Thai comes from CLDR, which publishes no such formal register.
+///
+/// Bytes, unparsed, for the same reason as [`address`]: what is signed is what
+/// is sent.
+pub fn countries() -> &'static str {
+    include_str!("../countries/countries.json")
+}
+
 /// A statement template, by act and version — the wording a person reads before
 /// signing, per language.
 ///
@@ -140,6 +156,42 @@ mod tests {
         // Development zones and county-level cities the latin source does not
         // publish; see SCHEMA.md, where each gap is named.
         assert_eq!(counted("CN"), (31, 31, 342, 324, 2978, 2431));
+    }
+
+    /// Both codes on every row, both languages on every row.
+    ///
+    /// A country with one code is a country one of the two callers cannot look
+    /// up, and a missing Thai name would fall back to English on a Thai screen
+    /// — quietly, and only for the countries nobody tested.
+    #[test]
+    fn every_country_has_both_codes_and_both_names() {
+        let v: serde_json::Value = serde_json::from_str(super::countries()).expect("parses");
+        let rows = v["countries"].as_array().expect("countries");
+        // ISO 3166-1 currently assigns 249 codes. Pinned so a truncated import
+        // fails here rather than by silently not offering somewhere.
+        assert_eq!(rows.len(), 249);
+        let mut a2 = std::collections::HashSet::new();
+        let mut a3 = std::collections::HashSet::new();
+        for c in rows {
+            let two = c["a2"].as_str().expect("alpha-2");
+            let three = c["a3"].as_str().expect("alpha-3");
+            assert_eq!(two.len(), 2, "{two} is not an alpha-2 code");
+            assert_eq!(three.len(), 3, "{three} is not an alpha-3 code");
+            assert!(a2.insert(two), "{two} appears twice");
+            assert!(a3.insert(three), "{three} appears twice");
+            for lang in v["languages"].as_array().unwrap() {
+                let lang = lang.as_str().unwrap();
+                assert!(
+                    c["names"][lang].as_str().is_some_and(|s| !s.is_empty()),
+                    "{two} has no {lang} name"
+                );
+            }
+        }
+        // The four with address trees must be in here, or a country picker
+        // could offer one it cannot name.
+        for cc in super::ADDRESS_COUNTRIES {
+            assert!(a2.contains(cc), "{cc} has a tree and no name");
+        }
     }
 
     #[test]
