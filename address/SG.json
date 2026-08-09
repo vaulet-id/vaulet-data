@@ -1,0 +1,1 @@
+{"country":"SG","languages":["en"],"name":{"en":"Singapore","local":"Singapore"},"version":"SG-libaddressinput","require":["street_address","postal_code"],"fields":["street_address","postal_code"],"postal":{"pattern":"\\d{6}","role":"pattern"},"levels":[],"level_names":{"postal_code":"postal_code"},"structure_levels":[],"regions":[]}

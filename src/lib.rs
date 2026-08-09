@@ -22,12 +22,16 @@ pub fn address(country: &str) -> Option<&'static str> {
         "US" => Some(include_str!("../address/US.json")),
         "JP" => Some(include_str!("../address/JP.json")),
         "CN" => Some(include_str!("../address/CN.json")),
+        "KR" => Some(include_str!("../address/KR.json")),
+        "TW" => Some(include_str!("../address/TW.json")),
+        "HK" => Some(include_str!("../address/HK.json")),
+        "SG" => Some(include_str!("../address/SG.json")),
         _ => None,
     }
 }
 
 /// Every country with a tree here.
-pub const ADDRESS_COUNTRIES: &[&str] = &["TH", "US", "JP", "CN"];
+pub const ADDRESS_COUNTRIES: &[&str] = &["TH", "US", "JP", "CN", "KR", "TW", "HK", "SG"];
 
 /// Every country there is, by both ISO 3166-1 codes, named in each language
 /// this system is read in.
@@ -72,14 +76,27 @@ mod tests {
             // from whether `l` happens to be present. A file that omitted it
             // would be read as three levels deep, which is true of one country
             // here and of none of the others.
+            // **Possibly empty.** Singapore publishes no administrative level
+            // at all: an address there is a street and a six-digit code, and a
+            // file forced to name one would be naming something invented.
             let levels = v["levels"].as_array().expect("a tree states its depth");
-            assert!(!levels.is_empty(), "{c}: levels is empty");
             assert!(!v["require"].as_array().expect("require").is_empty(), "{c}: require is empty");
             let role = v["postal"]["role"].as_str().expect("postal.role");
             assert!(
-                matches!(role, "leaf" | "pattern" | "determines"),
+                matches!(role, "leaf" | "pattern" | "determines" | "none"),
                 "{c}: postal.role is {role}, which nothing knows how to read"
             );
+            // A pattern is what `pattern` and `determines` are checked by, so
+            // one of those without it is a rule nothing can apply. `leaf` may
+            // carry one as well — Thailand's codes hang off the tree *and* have
+            // a shape — but `none` must not: a country with no postal code has
+            // nothing for a pattern to describe.
+            let has_pattern = v["postal"]["pattern"].is_string();
+            match role {
+                "pattern" | "determines" => assert!(has_pattern, "{c}: {role} with no pattern"),
+                "none" => assert!(!has_pattern, "{c}: no postal code, and a pattern for it"),
+                _ => {}
+            }
 
             // The depth the file claims is the depth it has.
             let deepest = v["regions"].as_array().unwrap().iter()
@@ -89,7 +106,12 @@ mod tests {
                         .map(|x| x["d"].as_array().map(|y| y.len()).unwrap_or(0)).sum()).unwrap_or(0);
                     if d > 0 { 3 } else if l > 0 { 2 } else { 1 }
                 })
-                .max().unwrap_or(1);
+                // **No regions is a depth of zero, not of one.** Singapore
+                // publishes no administrative level at all, and `unwrap_or(1)`
+                // read that as one level whose list happened to be empty —
+                // which is the difference between a country with nothing to
+                // pick and a country whose data failed to import.
+                .max().unwrap_or(0);
             assert_eq!(
                 deepest, levels.len(),
                 "{c}: says {} levels and carries {deepest}", levels.len()
@@ -103,6 +125,11 @@ mod tests {
             const NAMES: &[&str] = &[
                 "province", "state", "prefecture", "district", "city",
                 "sub_district", "postcode", "postal_code", "zip",
+                // Korea's top level is do or si, Taiwan's is county or city,
+                // Hong Kong's is an area — three words with no English one
+                // that covers them, which is why the authority publishes the
+                // word rather than leaving it to a default.
+                "do_si", "county", "area",
             ];
             let named = v["level_names"].as_object().expect("level_names");
             for (level, name) in named {
@@ -113,7 +140,13 @@ mod tests {
                 let level = level.as_str().unwrap();
                 assert!(named.contains_key(level), "{c}: walks {level} and does not name it");
             }
-            assert!(named.contains_key("postal_code"), "{c}: has no word for its postal code");
+            // Hong Kong has no postal code — not an omitted one, none at all —
+            // so it is the one country with no word for it.
+            assert_eq!(
+                named.contains_key("postal_code"),
+                role != "none",
+                "{c}: postal.role is {role} and its naming of postal_code does not match"
+            );
         }
     }
 
@@ -156,6 +189,14 @@ mod tests {
         // Development zones and county-level cities the latin source does not
         // publish; see SCHEMA.md, where each gap is named.
         assert_eq!(counted("CN"), (31, 31, 342, 324, 2978, 2431));
+        // libaddressinput carries a latin name for every one of these, which is
+        // why they arrive complete where Japan and China did not.
+        assert_eq!(counted("KR"), (17, 17, 253, 253, 0, 0));
+        assert_eq!(counted("TW"), (22, 22, 370, 370, 0, 0));
+        // Hong Kong's are English in the source; there is no Chinese to carry.
+        assert_eq!(counted("HK"), (3, 3, 124, 124, 0, 0));
+        // Singapore has no levels to name.
+        assert_eq!(counted("SG"), (0, 0, 0, 0, 0, 0));
     }
 
     /// Both codes on every row, both languages on every row.

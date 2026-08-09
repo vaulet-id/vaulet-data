@@ -170,6 +170,40 @@ source has no entry for at all, which are the same eighteen with no latin name o
 their own — `市辖区` and `省直辖县级行政区划`, administrative categories rather
 than places.
 
+## Four more, 2026-08-09, and two shapes nothing had yet
+
+| | levels | require | postal | |
+|---|---|---|---|---|
+| **KR** | 17 do/si → 253 cities | A C S Z | `pattern` | |
+| **TW** | 22 counties → 370 districts | A C S Z | `pattern` | |
+| **HK** | 3 areas → 124 districts | A S | **`none`** | there is no postal code |
+| **SG** | **none** | A Z | `pattern` | there is no level |
+
+The two in bold are why `postal.role` and `levels` were worth having, and each
+broke an assumption the four earlier countries never tested:
+
+**Hong Kong has no postal code at all.** Not an unpublished one — the territory
+does not use them, and `libaddressinput` gives `zip` as null. `require` is `AS`.
+So `role` gains a fourth value, `none`, and it is the one role that must *not*
+carry a pattern: there is nothing for a pattern to describe. Hong Kong is also
+the only file with no word for a postal code, and the test asserts that
+correspondence in both directions rather than requiring the word outright.
+
+**Singapore has no administrative level.** An address is a street and a
+six-digit code; `require` is `AZ` and there is no `S`. `levels` is `[]` — the
+first empty one — and a reader that walks levels has nothing to walk. Measuring
+depth had read this as one empty level, which is the difference between a
+country with nothing to pick and a country whose import failed.
+
+**All four arrive with English complete**, unlike Japan and China: everything
+here comes from `libaddressinput`, which publishes a latin name beside every
+key. Hong Kong's are English in the source rather than Chinese — the territory
+writes both, and this source carries one.
+
+Three new level-name tokens, because the authority publishes a word for each and
+no English word covers them: `do_si` (Korea's 도/시), `county` (Taiwan's 縣/市)
+and `area` (Hong Kong's).
+
 ## Sources
 
 - Field requirements, postal patterns and level-1 lists:
