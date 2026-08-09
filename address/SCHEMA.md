@@ -140,12 +140,35 @@ two states, so the derivation is a guess wearing a fact's clothes.
 If a verifier ever needs a county, it should be a claim with its own provenance
 and its own confidence, not a field smuggled into an address.
 
-**Japan's municipalities have no romaji here, and China's have partial pinyin.**
-1,895 Japanese entries carry `local` and an empty `en`; 324 of 342 Chinese cities
-have a latin name and none of the 2,978 districts do. The gap is left visible
-rather than filled by transliterating locally — a name this repository invented
-would be indistinguishable from one an authority published, and the whole
-argument for publishing this data is that somebody can check it.
+## English on every level, 2026-08-09
+
+**A credential crosses borders, so every place name carries English** — that is
+the rule the wallet is built on, and Japan and China were shipped breaking it:
+all 1,895 Japanese municipalities and all 2,978 Chinese districts had `local`
+and an empty `en`.
+
+Filled from the same authorities the trees came from, never by transliterating
+here. A name this repository invented would be indistinguishable from one an
+authority published, and the argument for publishing this data at all is that
+somebody can check it.
+
+| | filled | from | left empty |
+|---|---|---|---|
+| JP municipalities | 1,894 / 1,895 | geolonia `市区町村名ローマ字` | 熊本県 球磨郡湯前町 |
+| CN districts | 2,431 / 2,978 | `libaddressinput` `sub_lnames` | 547 |
+| CN cities | 324 / 342 | as before | 18 |
+
+**Named, so the gaps are checkable rather than approximate.** The one Japanese
+municipality is absent from that CSV altogether — Kuma-gun has nine and it lists
+eight — and `libaddressinput` publishes nothing below the prefecture, so there
+is no second source to ask.
+
+China's 547 are mostly development zones (`开发区`, `园区`, `管理区`) and a few
+recently promoted county-level cities that the National Bureau of Statistics
+carries and `libaddressinput` does not; 209 more sit inside eighteen cities that
+source has no entry for at all, which are the same eighteen with no latin name of
+their own — `市辖区` and `省直辖县级行政区划`, administrative categories rather
+than places.
 
 ## Sources
 

@@ -101,6 +101,47 @@ mod tests {
         }
     }
 
+    /// **English travels with every place name**, because a credential crosses
+    /// borders and a name nobody at the far end can read is not a claim.
+    ///
+    /// The counts are pinned rather than asserted as "most of them": each one
+    /// is what a named source published on 2026-08-09, and the gaps are named
+    /// in SCHEMA.md. A drop means an import lost rows; a rise means somebody
+    /// filled a gap and should say from where.
+    #[test]
+    fn every_level_carries_english_as_far_as_a_source_goes() {
+        fn counted(cc: &str) -> (usize, usize, usize, usize, usize, usize) {
+            let v: serde_json::Value =
+                serde_json::from_str(super::address(cc).unwrap()).unwrap();
+            let (mut l2, mut l2en, mut l3, mut l3en) = (0, 0, 0, 0);
+            let regions = v["regions"].as_array().unwrap();
+            for r in regions {
+                for c in r["l"].as_array().unwrap_or(&vec![]) {
+                    l2 += 1;
+                    if !c["en"].as_str().unwrap_or("").is_empty() { l2en += 1 }
+                    for d in c["d"].as_array().unwrap_or(&vec![]) {
+                        l3 += 1;
+                        if !d["en"].as_str().unwrap_or("").is_empty() { l3en += 1 }
+                    }
+                }
+            }
+            let r1 = regions.len();
+            let r1en = regions.iter()
+                .filter(|r| !r["en"].as_str().unwrap_or("").is_empty()).count();
+            (r1, r1en, l2, l2en, l3, l3en)
+        }
+
+        // Thailand is complete at every level and is the shape the others are
+        // measured against.
+        assert_eq!(counted("TH"), (77, 77, 928, 928, 7436, 7436));
+        assert_eq!(counted("US"), (62, 62, 0, 0, 0, 0));
+        // One municipality is absent from the romaji source altogether.
+        assert_eq!(counted("JP"), (47, 47, 1895, 1894, 0, 0));
+        // Development zones and county-level cities the latin source does not
+        // publish; see SCHEMA.md, where each gap is named.
+        assert_eq!(counted("CN"), (31, 31, 342, 324, 2978, 2431));
+    }
+
     #[test]
     fn an_unknown_country_is_none_rather_than_a_panic() {
         assert!(super::address("XX").is_none());
