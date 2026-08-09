@@ -73,10 +73,57 @@ That is the whole reason this is data and not a database: a dataset that mapped
 a sub-locality to the wrong postcode would put a wrong address on a credential
 that stays true for years, and it would look exactly like the right one.
 
-**The service packs it.** This repository is where a country's tree is authored
-and where a human reads it; `vaulet-services` compiles a copy in and serves it
-over `/api/v1/address/{country}` with the attestation. Keep the two identical —
-the copy is a build artefact of this one.
+**The service packs it.** This repository is where a country's tree is authored;
+`vaulet-services` takes this crate as a dependency, pinned by revision, and
+serves the bytes over `/api/v1/address/{country}` with the attestation. It used
+to carry its own copy — two datasets that agree until one of them does not.
+
+### The shape, for whoever adds the second country
+
+```json
+{
+  "country":   "TH",
+  "languages": ["th"],
+  "name":      { "en": "Thailand", "local": "ประเทศไทย" },
+  "version":   "TH-925cf27e8170",
+  "fields":    ["region", "locality", "dependent_locality", "postal_code",
+                "street_address", "th.region", "th.locality", "th.dependent_locality"],
+  "regions": [
+    { "c": 10, "local": "กรุงเทพมหานคร", "en": "Bangkok",
+      "l": [
+        { "c": 1001, "local": "พระนคร", "en": "Phra Nakhon",
+          "d": [
+            { "c": 100101, "local": "พระบรมมหาราชวัง",
+              "en": "Phra Borom Maha Ratchawang", "p": 10200 }
+          ] } ] } ]
+}
+```
+
+| key | is |
+|---|---|
+| `c` | the official code for that place, at that level |
+| `local` | the name in the country's own language — **this is the address** |
+| `en` | a transliteration, so a foreigner can find the row. Not the legal name |
+| `l` | localities inside a region — district, county, whatever the country calls it |
+| `d` | dependent localities inside a locality — sub-district, ward |
+| `p` | postal code, on the leaf, because that is the level that determines it |
+
+`languages` says which language the address is written in officially; `en` sits
+beside every row regardless, and is for reading rather than for record. Thailand
+is `["th"]`: a Thai address in English is a convenience, not the address.
+
+`fields` declares what this country's addresses are made of, in the three tiers
+ADR 0031 sets out — OIDC Core §5.1.1 names, then `dependent_locality`, then
+anything prefixed with the country code for what only that country has.
+
+`version` travels with the data and changes when the data does. The wallet
+compares it, so it is not decoration.
+
+Thailand today: 77 regions, 928 localities, 7,436 dependent localities, every
+one of them carrying both names and a postal code.
+
+**Every level needs both names and a code.** A tree with holes will pass this
+repository's tests and produce an address nobody can post to.
 
 ## Why these do not belong in the library
 

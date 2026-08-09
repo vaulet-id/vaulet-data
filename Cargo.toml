@@ -1,0 +1,17 @@
+[package]
+name = "vaulet_data"
+version = "0.1.0"
+edition = "2021"
+description = "Vaulet's reference data — the sentences people sign, and the place names an address is checked against"
+license = "Apache-2.0"
+repository = "https://github.com/vaulet-id/vaulet-data"
+readme = "README.md"
+
+# Embedded at compile time, so a deployment cannot serve a version that is not
+# in a repository and there is nothing to go missing on a machine — the property
+# the issuer already relied on when it carried its own copy. What changes is
+# that the copy is gone: this is the one, and consumers pin it by revision.
+[dependencies]
+
+[dev-dependencies]
+serde_json = "1"
